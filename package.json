@@ -1,0 +1,23 @@
+{
+  "name": "redux-loader",
+  "version": "0.0.1",
+  "description": "Loader component for Redux",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sporto/redux-loader.git"
+  },
+  "keywords": [
+    "react",
+    "redux"
+  ],
+  "author": "Sebastian Porto",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/sporto/redux-loader/issues"
+  },
+  "homepage": "https://github.com/sporto/redux-loader"
+}
