@@ -164,7 +164,11 @@ function makeLoader(options) {
 
 			var _this = this;
 
-			dispatch(actions[0])
+			var promises = _.map(actions, function(action) {
+				dispatch(action);
+			});
+
+			Promise.all(promises)
 				.then(function() {
 					log('action done')
 					_this.setState({
