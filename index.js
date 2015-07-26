@@ -15,29 +15,8 @@ The specified resources will be passed to the child component
 as props.
 
 @param {Class} options.component React component to show when done
+@param {Class} options.busy React component to show when loading
 @param {Map} options.resources A map with resources to fetch
-
-Example usage:
-
-var Loader = app.makeLoader({
-	component: Show,
-	resources: {
-		match: {
-			load: function(props) {
-				// props from the loader will be passed here
-				var matchId = props.params.matchId;
-				return fetch(matchId)
-			},
-			find: function(props, stores) {
-				// props will be passed here
-				// also all redux stores
-				var id = props.params.matchId
-				return _.find(stores.matches, {id})
-			}
-		}
-	}
-});
-
 */
 function makeLoader(options) {
 
