@@ -30,9 +30,10 @@ var Loader = createLoader({
 module.exports = Loader
 ```
 
-Configuration:
+### Configuration:
 
-```
+
+```js
 var Loader = createLoader({
 
 	// React component what will be rendered when resources are loaded
