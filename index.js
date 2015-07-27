@@ -31,7 +31,7 @@ function makeLoader(options) {
 	// validated resources
 	var resourcesSchema = joi.object().keys({
 		load:  joi.func().required(),
-		find: joi.func().required()
+		find:  joi.func().required()
 	});
 
 	_.each(options.resources, function(resource) {
@@ -70,12 +70,16 @@ function makeLoader(options) {
 			if (!find) throw new Error('Expected resource ' + resourceName + ' to have a find')
 
 			var stores = props.redux;
+			var args = {
+				stores: stores,
+				props:  props
+			}
 			/*
 			stores are in plural, so we don't really know how a resource def
 			will match a store e.g. user : users
 			we just delegate this to the find
 			*/
-			var result = find(props, stores)
+			var result = find(args)
 			/*
 			the find might return undefined e.g. cannot find a user
 			this shouldn't happen if the load is successful
@@ -118,34 +122,31 @@ function makeLoader(options) {
 
 			this.setState({
 				loading: true
-			});
+			})
+
+			var stores   = props.redux;
+			var dispatch = this.getDispatch();
 
 			/*
 			Get actions for all the resources we need to load
 			An action can be a function or an object
 			*/
-			var actions = _.map(options.resources, function(resource, resourceName) {
-				var action = resource.load(props);
-				var isFunction = _.isFunction(action);
-				var isObject   = _.isObject(action);
-				if (isFunction || isObject) return action;
-				throw new Error(resourceName + '.load must return an action');
+			var args = {
+				dispatch: dispatch,
+				stores:   stores,
+				props:    props
+			}
+			var promises = _.map(options.resources, function(resource, resourceName) {
+				var promise = resource.load(args);
+				// var isFunction = _.isFunction(action);
+				// var isObject   = _.isObject(action);
+				// if (isFunction || isObject) return action;
+				// console.log('PROMISE', promise)
+				return promise;
+				// throw new Error(resourceName + '.load must return an action');
 			});
-
-			var dispatch = this.getDispatch();
-
-			// TODO: trigger all actions
-			// and compose the promises
-			/*
-			When a load is already done then load
-			will return a resolved promise immediatelly
-			*/
 
 			var _this = this;
-
-			var promises = _.map(actions, function(action) {
-				dispatch(action);
-			});
 
 			Promise.all(promises)
 				.then(function() {

@@ -12,10 +12,10 @@ var Loader = createLoader({
 	component: Show,
 	resources: {
 		post: {
-			load: function(props) {
-				// props from the loader will be passed here
+			load: function(options) {
 				var postId = props.params.postId
-				return fetch(postId)
+				var action = fetch(postId)
+				return options.dispatch(action)
 			},
 			find: function(props, stores) {
 				// props will be passed here
@@ -53,22 +53,27 @@ var Loader = createLoader({
 
 			// this function is triggered when the loader first renders
 			// and each time the loader receives new props
-			load: function(props) {
-				// props from the loader will be passed here
+			load: function(options) {
+				// options.props // props from the loader will be passed here
+				// options.dispatch // redux dispatch function
+				// options.stores 
+
 				// your load function must return a promise
 				// if the promise is pending, then the loader will show the 'busy' component
 				// when all promises are resolved then the loader will call 'find'
 
 				var postId = props.params.postId
-				return fetch(postId)
+				var action = fetch(postId)
+				return options.dispatch(action)
 			},
 
 			// find is called when all promises returned by 'load' are resolved
 			// this function should return the resources to pass to the child component
 			// via props
-			find: function(props, stores) {
-				// props will be passed here
-				// also all redux stores
+			find: function(options) {
+				// options.props
+				// options.stores
+				
 				var postId = props.params.postId
 				return _.find(stores.posts, {postId})
 			}
