@@ -85,7 +85,7 @@ function makeLoader(options) {
 			this shouldn't happen if the load is successful
 			but it is possible to go an invalid url
 			*/
-			console.warn('Finder for ' + resourceName + ' returned undefined');
+			// console.warn('Finder for ' + resourceName + ' returned undefined');
 
 			map[resourceName] = result;
 		});
@@ -150,20 +150,22 @@ function makeLoader(options) {
 
 			Promise.all(promises)
 				.then(function() {
-					log('action done')
-					_this.setState({
-						loading: false
-					})
+					// log('action done')
+					if (_this.isMounted()) {
+						_this.setState({
+							loading: false
+						})
+					}
 				}, function(reason) {
-					log(reason)
+					// log(reason)
 				}).catch(function(error) {
-					console.error(error.stack);
 					console.error(error.toString());
+					console.error(error.stack);
 				});
 		},
 
 		render: function() {
-			log('render')
+			// log('render')
 			if (this.state.loading) {
 				return React.createElement(options.busy);
 			} else {
@@ -180,12 +182,13 @@ function makeLoader(options) {
 					.value();
 
 				if (undefinedKeys.length) {
-					log('Rendering error div')
+					// log('Rendering error div')
 					return React.createElement('div', null, 'Cant rended component. Cannot find resources: ' + undefinedKeys);
 				} else {
-					log('Rendering given component')
-					_.extend(this.props, map);
-					return React.createElement(options.component, this.props);
+					// log('Rendering given component')
+					var props = _.clone(this.props)
+					_.extend(props, map);
+					return React.createElement(options.component, props);
 				}
 			}
 		}
@@ -193,13 +196,13 @@ function makeLoader(options) {
 
 	var Wrapper = React.createClass({
 		render: function() {
-			var props = this.props;
+			var props = _.clone(this.props);
 			var func = function(redux) {
 				props.redux = redux;
-				log('Rendering Loader')
+				// log('Rendering Loader')
 				return React.createElement(Loader, props)
 			}
-			log('Rendering Connector')
+			// log('Rendering Connector')
 			return React.createElement(Connector, props, func);
 		}
 	});
