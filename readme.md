@@ -13,13 +13,18 @@ var Loader = createLoader({
 	resources: {
 		post: {
 			load: function(options) {
+				// options.props    <- props from the loader will be passed here
+				// options.dispatch <- redux dispatch function
+				// options.stores 
+
 				var postId = props.params.postId
 				var action = fetch(postId)
 				return options.dispatch(action)
 			},
-			find: function(props, stores) {
-				// props will be passed here
-				// also all redux stores
+			find: function(options) {
+				// options.props
+				// options.stores
+
 				var postId = props.params.postId
 				return _.find(stores.posts, {postId})
 			}
@@ -101,10 +106,10 @@ var Loader = createLoader({
 	component: Show,
 	resources: {
 		post: {
-			load: function(props) {
+			load: function(options) {
 				...
 			},
-			find: function(props, stores) {
+			find: function(options) {
 				...
 			}
 		},
