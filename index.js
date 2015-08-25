@@ -1,11 +1,9 @@
-var React             = require('react')
-var bows              = require('bows')
-var _                 = require('lodash')
-var joi               = require('joi')
-var Connector         = require('redux/react').Connector
+var React             = require('react');
+var _                 = require('lodash');
+var connect           = require('react-redux').connect;
 
 var PT                = React.PropTypes
-var log               = bows('app.Loader')
+// var log               = bows('app.Loader')
 
 /*
 Creates a Loader Component and a Wrapper
@@ -20,22 +18,16 @@ as props.
 */
 function makeLoader(options) {
 
-	var schema = {
-		resources: joi.object().required(),
-		component: joi.func().required(),
-		busy:      joi.func().required()
-	};
+	console.log('makeLoader', options)
 
-	joi.assert(options, schema);
+	if (!options.resources) throw new Error('Expected options.resources');
+	if (!options.component) throw new Error('Expected options.resources');
+	if (!options.busy)      throw new Error('Expected options.busy');
 
 	// validated resources
-	var resourcesSchema = joi.object().keys({
-		load:  joi.func().required(),
-		find:  joi.func().required()
-	});
-
 	_.each(options.resources, function(resource) {
-		joi.assert(resource, resourcesSchema);
+		if (!resource.load) throw new Error('Expected resource.load');
+		if (!resource.find) throw new Error('Expected resource.find');
 	});
 
 	/*
@@ -203,7 +195,7 @@ function makeLoader(options) {
 				return React.createElement(Loader, props)
 			}
 			// log('Rendering Connector')
-			return React.createElement(Connector, props, func);
+			return React.createElement(connect, props, func);
 		}
 	});
 

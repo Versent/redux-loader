@@ -19,5 +19,11 @@
   "bugs": {
     "url": "https://github.com/sporto/redux-loader/issues"
   },
-  "homepage": "https://github.com/sporto/redux-loader"
+  "homepage": "https://github.com/sporto/redux-loader",
+  "dependencies": {
+    "lodash": "^3.10.1",
+    "react": "^0.13.3",
+    "react-redux": "^1.0.0",
+    "redux": "^1.0.1"
+  }
 }
