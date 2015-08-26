@@ -1,9 +1,65 @@
 var React             = require('react');
 var _                 = require('lodash');
 var connect           = require('react-redux').connect;
+var invariant         = require('invariant');
+// var Provider          = require('react-redux').Provider;
 
 var PT                = React.PropTypes
-// var log               = bows('app.Loader')
+
+/*
+Return the names of the resources to load
+e.g. ['user', 'comments']
+*/
+function getResourceNames(options) {
+	return Object.keys(options.resources);
+}
+
+/*
+Return a map of resourceName and filtered resource/s
+
+@param {Map} props Component props
+@return
+e.g. {
+	user:     {},
+	comments: []
+}
+*/
+function getResources(options, props) {
+	var map = {};
+	var resourceNames = getResourceNames(options);
+
+	_.each(resourceNames, function(resourceName) {
+
+		var resourceDefinition = options.resources[resourceName];
+		if (!resourceDefinition) throw new Error('Expected resource definition for ' + resourceName);
+
+		// function that given all store, will return the relevant record/s
+		var find = resourceDefinition.find;
+		if (!find) throw new Error('Expected resource ' + resourceName + ' to have a find')
+
+		var store = props.redux;
+		var args = {
+			store: store,
+			props:  props
+		}
+		/*
+		store are in plural, so we don't really know how a resource def
+		will match a store e.g. user : users
+		we just delegate this to the find
+		*/
+		var result = find(args)
+		/*
+		the find might return undefined e.g. cannot find a user
+		this shouldn't happen if the load is successful
+		but it is possible to go an invalid url
+		*/
+		// console.warn('Finder for ' + resourceName + ' returned undefined');
+
+		map[resourceName] = result;
+	});
+
+	return map;
+}
 
 /*
 Creates a Loader Component and a Wrapper
@@ -16,9 +72,9 @@ as props.
 @param {Class} options.busy React component to show when loading
 @param {Map} options.resources A map with resources to fetch
 */
-function makeLoader(options) {
+function createLoader(options) {
 
-	console.log('makeLoader', options)
+	console.log('createLoader', options)
 
 	if (!options.resources) throw new Error('Expected options.resources');
 	if (!options.component) throw new Error('Expected options.resources');
@@ -30,64 +86,11 @@ function makeLoader(options) {
 		if (!resource.find) throw new Error('Expected resource.find');
 	});
 
-	/*
-	Return the names of the resources to load
-	e.g. ['user', 'comments']
-	*/
-	function getResourceNames() {
-		return Object.keys(options.resources);
-	}
-
-	/*
-	Return a map of resourceName and filtered resource/s
-
-	@param {Map} props Component props
-	@return
-	e.g. {
-		user:     {},
-		comments: []
-	}
-	*/
-	function getResources(props) {
-		var map = {};
-		var resourceNames = getResourceNames();
-
-		_.each(resourceNames, function(resourceName) {
-
-			var resourceDefinition = options.resources[resourceName];
-			if (!resourceDefinition) throw new Error('Expected resource definition for ' + resourceName);
-
-			// function that given all stores, will return the relevant record/s
-			var find = resourceDefinition.find;
-			if (!find) throw new Error('Expected resource ' + resourceName + ' to have a find')
-
-			var stores = props.redux;
-			var args = {
-				stores: stores,
-				props:  props
-			}
-			/*
-			stores are in plural, so we don't really know how a resource def
-			will match a store e.g. user : users
-			we just delegate this to the find
-			*/
-			var result = find(args)
-			/*
-			the find might return undefined e.g. cannot find a user
-			this shouldn't happen if the load is successful
-			but it is possible to go an invalid url
-			*/
-			// console.warn('Finder for ' + resourceName + ' returned undefined');
-
-			map[resourceName] = result;
-		});
-
-		return map;
-	}
-
 	var Loader = React.createClass({
 		getInitialState: function() {
-			return {loading: true};
+			return {
+				loading: true,
+			};
 		},
 
 		/*
@@ -101,48 +104,30 @@ function makeLoader(options) {
 		This happens when a route is changed
 		*/
 		componentWillReceiveProps: function(nextProps) {
-			// log('componentWillReceiveProps', nextProps)
 			this.loadResources(nextProps)
 		},
 
-		getDispatch: function() {
-			return this.props.redux.dispatch;
-		},
-
 		loadResources: function(props) {
-			// log('loadResources', props)
+			invariant(props.store    != null, "props.store is null");
+			invariant(props.dispatch != null, "props.dispatch is null");
 
 			this.setState({
 				loading: true
-			})
+			});
 
-			var stores   = props.redux;
-			var dispatch = this.getDispatch();
-
-			/*
-			Get actions for all the resources we need to load
-			An action can be a function or an object
-			*/
-			var args = {
-				dispatch: dispatch,
-				stores:   stores,
-				props:    props
-			}
 			var promises = _.map(options.resources, function(resource, resourceName) {
-				var promise = resource.load(args);
-				// var isFunction = _.isFunction(action);
-				// var isObject   = _.isObject(action);
-				// if (isFunction || isObject) return action;
-				// console.log('PROMISE', promise)
+				var promise = resource.load(props);
+				invariant(promise != null, 'the load function must return a promise');
+				invariant(promise.then != null, 'the load function must return a promise');
+				// console.log(promise);
 				return promise;
-				// throw new Error(resourceName + '.load must return an action');
 			});
 
 			var _this = this;
 
 			Promise.all(promises)
 				.then(function() {
-					// log('action done')
+					console.log('actions done')
 					if (_this.isMounted()) {
 						_this.setState({
 							loading: false
@@ -186,20 +171,28 @@ function makeLoader(options) {
 		}
 	});
 
-	var Wrapper = React.createClass({
-		render: function() {
-			var props = _.clone(this.props);
-			var func = function(redux) {
-				props.redux = redux;
-				// log('Rendering Loader')
-				return React.createElement(Loader, props)
-			}
-			// log('Rendering Connector')
-			return React.createElement(connect, props, func);
-		}
-	});
+	// var Wrapper = React.createClass({
+	// 	render: function() {
+	// 		var props = _.clone(this.props);
+	// 		var func = function(redux) {
+	// 			props.redux = redux;
+	// 			// log('Rendering Loader')
+	// 			return React.createElement(Loader, props)
+	// 		}
+	// 		// log('Rendering Connector')
+	// 		return React.createElement(connect, props, func);
+	// 	}
+	// });
 
-	return Wrapper;
+	// Inject all store but as a `store` props
+	function select(state) {
+		return {
+			store: state
+		};
+	}
+
+	return connect(select)(Loader);
+	// return React.createElement(Provider, function() {});
 }
 
-module.exports = makeLoader;
+module.exports = createLoader;
