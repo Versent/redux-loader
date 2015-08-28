@@ -5,41 +5,48 @@ A high order component for Redux. This components loads resources and passes the
 ## Usage
 
 ```js
+import createLoader   from 'redux-loader';
+import { connect }    from 'react-redux';
+import Show           from './Show.jsx';
+import Busy           from './Busy.jsx';
 
-var createLoader = require('redux-loader')
-
-var Loader = createLoader({
+const Loader = createLoader({
 	component: Show,
+	busy: Busy,
 	resources: {
 		post: {
-			load: function(options) {
-				// options.props    <- props from the loader will be passed here
-				// options.dispatch <- redux dispatch function
-				// options.stores 
 
-				var postId = props.params.postId
-				var action = fetch(postId)
-				return options.dispatch(action)
-			},
 			find: function(options) {
 				// options.props
-				// options.stores
+				// options.context
+				// options.dispatch <- redux dispatch function
 
-				var postId = props.params.postId
-				return _.find(stores.posts, {postId})
-			}
+				const id = options.context.router.state.params.id;
+				return _.find(options.props.posts, {id});
+			},
+
+			load: function(options) {
+				// options.props
+				// options.context
+				// options.dispatch <- redux dispatch function
+
+				const id = options.context.router.state.params.id;
+				const action = actions.fetchOne(postId)
+				return options.dispatch(action)
+			},
+
 		}
 	}
 })
 
-module.exports = Loader
+export default connect(state => state)(Loader);
 ```
 
 ### Configuration:
 
 
 ```js
-var Loader = createLoader({
+const Loader = createLoader({
 
 	// React component what will be rendered when resources are loaded
 	component: Show,
@@ -59,57 +66,57 @@ var Loader = createLoader({
 		post: {
 
 			/*
-			this function is triggered when the loader first renders
-			and each time the loader receives new props
-			*/
-			load: function(options) {
-				// options.props    <- props from the loader will be passed here
-				// options.dispatch <- redux dispatch function
-				// options.stores 
-
-				// the load function must return a promise or collection of promises
-				// if the promise is pending, then the loader will show the 'busy' component
-				// when all promises are resolved then the loader will call 'find'
-
-				var postId = props.params.postId
-				var action = fetch(postId)
-				return options.dispatch(action)
-
-				// this function may return a collection of promises
-				var action1 = fetch(postId)
-				var action2 = fetchComments(postId)
-				return Promise.all([options.dispatch(action1), options.dispatch(action2)])
-			},
-
-			/*
-			find is called when all promises returned by 'load' are resolved
-			this function should return the resources to pass to the child component via props
+			find is called first
+			if find return an object or an array
+			then the component will be rendered
+			passing the resources to the child component via props
+			if the resource/s is not availabel then find should return null or undefined
 			*/
 			find: function(options) {
 				// options.props
-				// options.stores
+				// options.context
+				// options.dispatch
+				// you need to pass the state you need to the Loader
+				// using connect
 				
-				var postId = props.params.postId
-				return _.find(stores.posts, {postId})
+				const userId = options.context.router.state.params.id
+				return _.find(options.props.users, {id: userId})
+			},
+
+			/*
+			this is triggered only when find has returned null
+			*/
+			load: function(options) {
+				// options.props <- props from the loader will be passed here
+				// options.context 
+				// options.dispatch <- redux dispatch function
+
+				const userId = options.context.router.state.params.id
+				const action = actions.fetchOne(userId)
+				return options.dispatch(action);
 			}
+
 		}
 	}
-})
+});
+
+// You need to pipe Loader through connect
+export default connect(state => state)(Loader);
 ```
 
 You may also load several resources at once:
 
 ```js
-var createLoader = require('redux-loader')
+const createLoader = require('redux-loader')
 
-var Loader = createLoader({
+const Loader = createLoader({
 	component: Show,
 	resources: {
 		post: {
-			load: function(options) {
-				...
-			},
 			find: function(options) {
+				...
+			}
+			load: function(options) {
 				...
 			}
 		},
