@@ -4,6 +4,12 @@ var _                 = require('lodash');
 
 var PT                = React.PropTypes
 
+function assertResourceDefinition(name, resourceDefinition) {
+	if (!resourceDefinition.id)   throw new Error('Expected ' + name + ' definition to return an id')
+	if (!resourceDefinition.find) throw new Error('Expected ' + name + ' definition to return an id')
+	if (!resourceDefinition.load) throw new Error('Expected ' + name + ' definition to return an id')
+}
+
 /*
 Return the names of the resources to load
 e.g. ['user', 'comments']
@@ -13,12 +19,25 @@ function getResourceNames(config) {
 	return Object.keys(config.resources);
 }
 
-function assertResourceDefinition(name, resourceDefinition) {
-	if (!resourceDefinition.id)   throw new Error('Expected ' + name + ' definition to return an id')
-	if (!resourceDefinition.find) throw new Error('Expected ' + name + ' definition to return an id')
-	if (!resourceDefinition.load) throw new Error('Expected ' + name + ' definition to return an id')
-}
+function getResourceDefinition(args, resourceName) {
+	if (args.config  == null)    throw new Error('Expected args.config');
+	if (resourceName == null)    throw new Error('Expected resourceName');
 
+	var resourceDefinitionCreator = args.config.resources[resourceName];
+	if (!_.isFunction(resourceDefinitionCreator)) throw new Error(resourceName + 'to be a function');
+
+
+	var options = {
+		context:  args.context,
+		dispatch: args.props.dispatch,
+		props:    args.props
+	}
+
+	var resourceDefinition = resourceDefinitionCreator(options);
+	assertResourceDefinition(resourceName, resourceDefinition);
+
+	return resourceDefinition;
+}
 /*
 Return a map of resourceName with filtered resource/s
 
@@ -45,13 +64,7 @@ function findResources(args) {
 
 	_.each(resourceNames, function(resourceName) {
 
-		var resourceDefinitionCreator = args.config.resources[resourceName];
-
-		if (resourceDefinitionCreator == null)        throw new Error('resourceDefinitionCreator for ' + resourceName + ' not found');
-		if (!_.isFunction(resourceDefinitionCreator)) throw new Error(resourceName + 'to be a function');
-
-		var resourceDefinition = resourceDefinitionCreator(options);
-		assertResourceDefinition(resourceName, resourceDefinition);
+		var resourceDefinition = getResourceDefinition(args, resourceName);
 
 		// function that given all state, will return the relevant record/s
 		var find = resourceDefinition.find;
@@ -94,15 +107,7 @@ function loadResources(args) {
 	}
 
 	_.each(args.resourceNames, function(resourceName) {
-		var resourceDefinitionCreator = args.config.resources[resourceName];
-
-		if (resourceDefinitionCreator == null)        throw new Error('resourceDefinitionCreator for ' + resourceName + ' not found');
-		if (!_.isFunction(resourceDefinitionCreator)) throw new Error(resourceName + 'to be a function');
-
-		var resourceDefinition = resourceDefinitionCreator(options);
-		assertResourceDefinition(resourceName, resourceDefinition);
-
-		if (resourceDefinition.load == null) throw new Error(resourceName + '.load not found');
+		var resourceDefinition = getResourceDefinition(args, resourceName);
 
 		var load = resourceDefinition.load;
 		var result = load();
@@ -117,15 +122,7 @@ function assertResourceCountOk(args, resourceName) {
 	if (args.config == null)    throw new Error('Expected args.config');
 	if (args.loader == null)    throw new Error('Expected args.loader');
 
-	// console.log('assertResourceCountOk', resourceName)
-	var resourceDefinitionCreator = args.config.resources[resourceName];
-	var options = {
-		context:  args.context,
-		dispatch: args.props.dispatch,
-		props:    args.props
-	}
-	var resourceDefinition = resourceDefinitionCreator(options)
-	assertResourceDefinition(resourceName, resourceDefinition)
+	var resourceDefinition = getResourceDefinition(args, resourceName);
 
 	var loader = args.loader;
 
