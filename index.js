@@ -1,7 +1,6 @@
 var React             = require('react');
 var _                 = require('lodash');
 // var connect           = require('react-redux').connect;
-var invariant         = require('invariant');
 
 var PT                = React.PropTypes
 
@@ -10,7 +9,14 @@ Return the names of the resources to load
 e.g. ['user', 'comments']
 */
 function getResourceNames(config) {
+	if (config.resources == null) throw new Error('Expected config.resources');
 	return Object.keys(config.resources);
+}
+
+function assertResourceDefinition(name, resourceDefinition) {
+	if (!resourceDefinition.id)   throw new Error('Expected ' + name + ' definition to return an id')
+	if (!resourceDefinition.find) throw new Error('Expected ' + name + ' definition to return an id')
+	if (!resourceDefinition.load) throw new Error('Expected ' + name + ' definition to return an id')
 }
 
 /*
@@ -23,27 +29,29 @@ e.g. {
 	comments: [],
 }
 */
-function findResources(config, loader, props, context) {
-	console.log('findResources');
-
-	invariant(loader != null, 'loader is null');
-	invariant(props != null, 'props is null');
-	invariant(props.dispatch != null, 'props.dispatch is null');
-	invariant(context != null, 'context is null');
+function findResources(args) {
+	if (args.loader == null)    throw new Error('Expected args.loader');
+	if (args.config == null)    throw new Error('Expected args.config');
+	if (args.props == null)     throw new Error('Expected args.props');
+	if (args.context == null)   throw new Error('Expected args.context');
 
 	var resourcesMap = {};
-	var resourceNames = getResourceNames(config);
+	var resourceNames = getResourceNames(args.config);
 	var options = {
-		context: context,
-		dispatch: props.dispatch,
-		props: props
+		context:  args.context,
+		dispatch: args.props.dispatch,
+		props:    args.props
 	}
 
 	_.each(resourceNames, function(resourceName) {
 
-		var resourceDefinition = config.resources[resourceName];
-		invariant(resourceDefinition != null, 'resourceDefinition for ' + resourceName + ' not found')
-		invariant(resourceDefinition.find != null, resourceName + '.find not found')
+		var resourceDefinitionCreator = args.config.resources[resourceName];
+
+		if (resourceDefinitionCreator == null)        throw new Error('resourceDefinitionCreator for ' + resourceName + ' not found');
+		if (!_.isFunction(resourceDefinitionCreator)) throw new Error(resourceName + 'to be a function');
+
+		var resourceDefinition = resourceDefinitionCreator(options);
+		assertResourceDefinition(resourceName, resourceDefinition);
 
 		// function that given all state, will return the relevant record/s
 		var find = resourceDefinition.find;
@@ -53,7 +61,7 @@ function findResources(config, loader, props, context) {
 		will match a state e.g. user : users
 		we just delegate this to the find
 		*/
-		var result = find(options);
+		var result = find(options.props);
 
 		/*
 		the find might return undefined e.g. cannot find a user
@@ -66,29 +74,38 @@ function findResources(config, loader, props, context) {
 	return resourcesMap;
 }
 
-function loadResources(config, loader, props, context, resourceNames) {
-	console.log('loadResource', resourceNames);
+/*
+@param {Array} args.resourcesMap List of resources to load
+*/
+function loadResources(args) {
 
-	invariant(loader != null, 'loader is null');
-	invariant(props != null, 'props is null');
-	invariant(props.dispatch != null, 'props.dispatch is null');
-	invariant(context != null, 'context is null');
-	invariant(resourceNames != null, 'resourceNames is null');
+	if (args.config == null)          throw new Error('Expected args.config');
+	if (args.context == null)         throw new Error('Expected args.context');
+	if (args.loader == null)          throw new Error('Expected args.loader');
+	if (args.props == null)           throw new Error('Expected args.props');
+	if (args.props.dispatch == null)  throw new Error('Expected args.props.dispatch');
+	if (args.resourceNames == null)   throw new Error('Expected args.resourceNames');
 
 	var resourcesMap = {};
 	var options = {
-		context: context,
-		dispatch: props.dispatch,
-		props: props
+		context:  args.context,
+		dispatch: args.props.dispatch,
+		props:    args.props
 	}
 
-	_.each(resourceNames, function(resourceName) {
-		var resourceDefinition = config.resources[resourceName];
-		invariant(resourceDefinition != null, 'resourceDefinition for ' + resourceName + ' not found')
-		invariant(resourceDefinition.load != null, resourceName + '.load not found')
+	_.each(args.resourceNames, function(resourceName) {
+		var resourceDefinitionCreator = args.config.resources[resourceName];
+
+		if (resourceDefinitionCreator == null)        throw new Error('resourceDefinitionCreator for ' + resourceName + ' not found');
+		if (!_.isFunction(resourceDefinitionCreator)) throw new Error(resourceName + 'to be a function');
+
+		var resourceDefinition = resourceDefinitionCreator(options);
+		assertResourceDefinition(resourceName, resourceDefinition);
+
+		if (resourceDefinition.load == null) throw new Error(resourceName + '.load not found');
 
 		var load = resourceDefinition.load;
-		var result = load(options);
+		var result = load();
 
 		resourcesMap[resourceName] = result;
 	});
@@ -96,13 +113,69 @@ function loadResources(config, loader, props, context, resourceNames) {
 	return resourcesMap;
 }
 
-function findAndLoadResources(config, loader, props, context) {
-	invariant(loader != null, 'loader is null');
-	invariant(props != null, 'props is null');
-	invariant(props.dispatch != null, 'props.dispatch is null');
-	invariant(context != null, 'context is null');
+function assertResourceCountOk(args, resourceName) {
+	if (args.config == null)    throw new Error('Expected args.config');
+	if (args.loader == null)    throw new Error('Expected args.loader');
 
-	var resourcesMap = findResources(config, loader, props, context);
+	// console.log('assertResourceCountOk', resourceName)
+	var resourceDefinitionCreator = args.config.resources[resourceName];
+	var options = {
+		context:  args.context,
+		dispatch: args.props.dispatch,
+		props:    args.props
+	}
+	var resourceDefinition = resourceDefinitionCreator(options)
+	assertResourceDefinition(resourceName, resourceDefinition)
+
+	var loader = args.loader;
+
+	var id = resourceDefinition.id;
+	if (id == null) throw new Error(resourceName + '.id not found');
+
+	var storedResourceData = loader._resources[resourceName] || {}
+
+	var reset = false;
+
+	if (storedResourceData.id == null)  reset = true;
+	if (storedResourceData.id != id)    reset = true;
+
+	if (reset) {
+		storedResourceData = {
+			id: id,
+			count: 0,
+		}
+	} else {
+		storedResourceData.count ++;
+	}
+
+	if (storedResourceData.count > 25) throw new Error(resourceName + ' is generating too many fetches')
+
+	loader._resources[resourceName] = storedResourceData;
+}
+
+function assertResourcesCountOk(args) {
+	if (args.loader == null)    throw new Error('Expected args.loader');
+	if (args.config == null)    throw new Error('Expected args.config');
+
+	var loader = args.loader;
+	loader._resources = loader._resources || {};
+	var resourceNames = getResourceNames(args.config);
+
+	_.each(resourceNames, function(resourceName) {
+		assertResourceCountOk(args, resourceName);
+	});
+}
+
+function findAndLoadResources(args) {
+
+	if (args.config == null)    throw new Error('Expected args.config');
+	if (args.context == null)   throw new Error('Expected args.context');
+	if (args.loader == null)    throw new Error('Expected args.loader');
+	if (args.props == null)     throw new Error('Expected args.props');
+
+	assertResourcesCountOk(args);
+
+	var resourcesMap = findResources(args);
 
 	var resourcesToLoad = [];
 
@@ -112,14 +185,26 @@ function findAndLoadResources(config, loader, props, context) {
 		}
 	});
 
-	console.log('resourcesToLoad', resourcesToLoad);
+	// console.log('resourcesToLoad', resourcesToLoad);
 
 	if (resourcesToLoad.length > 0) {
-		loadResources(config, loader, props, context, resourcesToLoad);
+		args.resourceNames = resourcesToLoad;
+		loadResources(args);
 		return {};
 	}
 
 	return resourcesMap;
+}
+
+function assertConfig(config) {
+	if (!config.resources) throw new Error('Expected config.resources');
+	if (!config.component) throw new Error('Expected config.resources');
+	if (!config.busy)      throw new Error('Expected config.busy');
+
+	// validated resources
+	_.each(config.resources, function(resource, key) {
+		if (!_.isFunction(resource))   throw new Error('Expected ' + key + ' to be function');
+	});
 }
 
 /*
@@ -134,18 +219,7 @@ as props.
 @param {Map} config.resources A map with resources to fetch
 */
 function createLoader(config) {
-
-	console.log('createLoader', config)
-
-	if (!config.resources) throw new Error('Expected config.resources');
-	if (!config.component) throw new Error('Expected config.resources');
-	if (!config.busy)      throw new Error('Expected config.busy');
-
-	// validated resources
-	_.each(config.resources, function(resource) {
-		if (!resource.find) throw new Error('Expected resource.find');
-		if (!resource.load) throw new Error('Expected resource.load');
-	});
+	assertConfig(config);
 
 	var Loader = React.createClass({
 		getInitialState: function() {
@@ -169,7 +243,13 @@ function createLoader(config) {
 		},
 
 		processResources: function(props, context) {
-			var resourcesMap = findAndLoadResources(config, this, props, context);
+			var args = {
+				config:  config,
+				context: context,
+				loader:  this,
+				props:   props,
+			}
+			var resourcesMap = findAndLoadResources(args);
 			var loading = true;
 
 			if (Object.keys(resourcesMap).length > 0) {
@@ -188,8 +268,14 @@ function createLoader(config) {
 		},
 
 		renderComponent: function() {
-			var resourcesMap = findResources(config, this, this.props, this.context);
-			invariant(Object.keys(resourcesMap).length != 0, 'Loaded resources is 0');
+			var args = {
+				config:config, 
+				context: this.context,
+				loader: this, 
+				props: this.props, 
+			}
+			var resourcesMap = findResources(args);
+			if (Object.keys(resourcesMap).length == 0) throw new Error('Loaded resources is 0');
 
 			var undefinedKeys = _(resourcesMap)
 					.map(function(value, key) {
