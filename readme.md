@@ -136,6 +136,8 @@ const Loader = createLoader({
 })
 ```
 
+[Example app here](https://github.com/Versent/react-starter/blob/master/client/src/users/ShowLoader.jsx)
+
 ## How does it work
 
 <img src="https://docs.google.com/drawings/d/1giKZMiIZYK8uOyBksbtT4OQDAivV6IVhVt5WndDb6Bs/pub?w=960&amp;h=720">
