@@ -1,8 +1,25 @@
-#Redux Loader
+# Redux Loader
 
 A high order component for Redux. This components loads resources and passes them to the child components via props.
 
 ## Usage
+
+You Redux application must include the Redux Loader reducer for `requests`:
+
+```js
+import reduxLoader from 'redux-loader'
+
+const allReducers = combineReducers({
+  requests:        reduxLoader.reducer,
+  ...
+})
+
+const store = finalCreateStore(allReducers)
+```
+
+This reducer is used for keeping track of pending and done requests.
+
+Then create a high order component to load the data:
 
 ```js
 import createLoader   from 'redux-loader';
@@ -10,42 +27,7 @@ import { connect }    from 'react-redux';
 import Show           from './Show.jsx';
 import Busy           from './Busy.jsx';
 
-const Loader = createLoader({
-	busy: Busy,
-	component: Show,
-	resources: {
-		post: function(options) {
-			// options.props
-			// options.context
-			// options.dispatch <- redux dispatch function
-
-			const id = options.context.router.state.params.id;
-
-			return {
-				id: id,
-
-				find: function() {
-					return _.find(options.props.posts, {id});
-				},
-
-				load: function() {
-					const action = actions.fetchOne(postId)
-					return options.dispatch(action)
-				},
-			}
-
-		}
-	}
-})
-
-export default connect(state => state)(Loader);
-```
-
-### Configuration:
-
-
-```js
-const Loader = createLoader({
+const Loader = reduxLoader.create({
 
 	// React component to show while loading the resources
 	busy:      Busy,
@@ -54,18 +36,17 @@ const Loader = createLoader({
 	component: Show,
 
 	/*
-	resources is a map with resources to load
-	before rendering the component above
-	this can be one or many
-	the component above will receive these resources as props e.g. post
+	`resources` is a map with resources to load before rendering the component above
+	this can be one or many.
+
+	The component above will receive these resources as props e.g. post
 	*/
 	resources: {
 
-		
 		/*
-		This resource will be send to the child component via props
+		This resource will be send to the child component via props.
 
-		You must return a function for each resource you want to load
+		You must return a function for each resource you want to load.
 		This function takes:
 
 		- options.props
@@ -78,39 +59,44 @@ const Loader = createLoader({
 
 		This function must return an object with keys {id, find, load}
 		*/
-		post: function(options) {
+		user: function(options) {
 
-			var postId = options.props.postId;
-			var id = '/posts/' + postId;
+			var userId = options.props.userId;
+			var id = '/users/' + userId;
 
 			return {
 				/*
-				Loader must return an id for the current resource
-				The id is just used to check for loaders doing too many request for the same resource.
+				Loader must return an id for the current resource. This id will be used to keep
+				track of request already done.
 				*/
 				id: id,
 
 				/*
-				find the resource/s in your state. This function is called before load.
-
-				If find returns an object or an array then the component will be rendered,
-				passing the resources to the child component via props
-
-				If find returns null or undefined then load will be called. If your find function returns null too many times then the loader will shortcircuit and throw an error.
+				Ask to load the resource/s
+				This is triggered when a request has not done before. This is determined by `id` above.
 				*/
-				find: function() {
-					const userId = options.context.router.state.params.id
-					return _.find(options.props.users, {id: userId});
+				load: function() {
+					var action = actions.fetchOne(userId);
+					return options.dispatch(action);
 				},
 
 				/*
-				Ask to load the resource/s
-				This is triggered only when find has returned null
+				Find the resource/s in your state.
+
+				This is called when a request has been done successfully.
+				Loader uses the given `id` above to determine this.
 				*/
-				load: function() {
-					const action = actions.fetchOne(postId);
-					return options.dispatch(action);
-				}
+				find: function() {
+					return _.find(options.props.users, {id: userId});
+				},
+
+			},
+
+			/*
+			You may also load several resources at once
+			*/
+			posts: function(options) {
+				...
 			}
 
 		}
@@ -119,21 +105,6 @@ const Loader = createLoader({
 
 // You need to pipe Loader through connect
 export default connect(state => state)(Loader);
-```
-
-You may also load several resources at once:
-
-```js
-const createLoader = require('redux-loader')
-
-const Loader = createLoader({
-	busy:      Busy,
-	component: Show,
-	resources: {
-		post: function (options) {...},
-		comments: function (options) {...}
-	}
-})
 ```
 
 [Example app here](https://github.com/Versent/react-starter/blob/master/client/src/users/ShowLoader.jsx)
