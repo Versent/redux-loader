@@ -22,89 +22,92 @@ This reducer is used for keeping track of pending and done requests.
 Then create a high order component to load the data:
 
 ```js
-import createLoader   from 'redux-loader';
-import { connect }    from 'react-redux';
-import Show           from './Show.jsx';
-import Busy           from './Busy.jsx';
+import reduxLoader    from 'redux-loader'
+import { connect }    from 'react-redux'
+import _              from 'lodash'
+import Show           from './Show.jsx'
+import Busy           from './Busy.jsx'
 
 const Loader = reduxLoader.create({
 
-	// React component to show while loading the resources
-	busy:      Busy,
+  // React component to show while loading the resources
+  busy:      Busy,
 
-	// React component what will be rendered when resources are loaded
-	component: Show,
+  // React component what will be rendered when resources are loaded
+  component: Show,
 
-	/*
-	`resources` is a map with resources to load before rendering the component above
-	this can be one or many.
+  /*
+  `resources` is a map with resources to load before rendering the component above
+  this can be one or many.
 
-	The component above will receive these resources as props e.g. post
-	*/
-	resources: {
+  The component above will receive these resources as props e.g. post
+  */
+  resources: {
 
-		/*
-		This resource will be send to the child component via props.
+    /*
+    This resource will be send to the child component via props.
 
-		You must return a function for each resource you want to load.
-		This function takes:
+    You must return a function for each resource you want to load.
 
-		- options.props
-		- options.context
-		- options.dispatch
+    This function takes:
 
-		You need to pass the state you need to the Loader using connect.
-		You function will be called again each time your component receives new props,
-		meaning that you will always have fresh props.
+    - options.props
+    - options.context
+    - options.dispatch
 
-		This function must return an object with keys {id, find, load}
-		*/
-		user: function(options) {
+    You need to pass the state you need to the Loader using connect.
+    You function will be called again each time your component receives new props,
+    meaning that you will always have fresh props.
 
-			var userId = options.props.userId;
-			var id = '/users/' + userId;
+    This function must return an object with keys {id, find, load}
+    */
+    user: function(options) {
 
-			return {
-				/*
-				Loader must return an id for the current resource. This id will be used to keep
-				track of request already done.
-				*/
-				id: id,
+      const userId = options.props.userId
+      const id = `/users/${userId}`
 
-				/*
-				Ask to load the resource/s
-				This is triggered when a request has not done before. This is determined by `id` above.
-				*/
-				load: function() {
-					var action = actions.fetchOne(userId);
-					return options.dispatch(action);
-				},
+      return {
+        /*
+        Loader must return an id for the current resource.
+        This id will be used to keep track of request already done.
+        */
+        id: id,
 
-				/*
-				Find the resource/s in your state.
+        /*
+        Ask to load the resource/s
+        This is triggered when a request has not been done before.
+        This is determined by `id` above.
+        */
+        load: function() {
+          const action = actions.fetchOne(userId)
+          return options.dispatch(action)
+        },
 
-				This is called when a request has been done successfully.
-				Loader uses the given `id` above to determine this.
-				*/
-				find: function() {
-					return _.find(options.props.users, {id: userId});
-				},
+        /*
+        Find the resource/s in your state.
 
-			},
+        This is called when a request has been done successfully.
+        Loader uses the given `id` above to determine this.
+        */
+        find: function() {
+          return _.find(options.props.users, {id: userId})
+        },
 
-			/*
-			You may also load several resources at once
-			*/
-			posts: function(options) {
-				...
-			}
+      },
 
-		}
-	}
+      /*
+      You may also load several resources at once
+      */
+      posts: function(options) {
+        ...
+      }
+
+    }
+  }
 });
 
 // You need to pipe Loader through connect
-export default connect(state => state)(Loader);
+export default connect(state => state)(Loader)
 ```
 
 [Example app here](https://github.com/Versent/react-starter/blob/master/client/src/users/ShowLoader.jsx)
