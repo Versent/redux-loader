@@ -117,6 +117,6 @@ export default connect(state => state)(Loader)
 
 ## How does it work
 
-<img src="https://docs.google.com/drawings/d/1giKZMiIZYK8uOyBksbtT4OQDAivV6IVhVt5WndDb6Bs/pub?w=960&amp;h=720">
+<img src="https://docs.google.com/drawings/d/1giKZMiIZYK8uOyBksbtT4OQDAivV6IVhVt5WndDb6Bs/pub?h=1048">
 
 Heavily inspired by [Marty](http://martyjs.org/guides/fetching-state/index.html)
