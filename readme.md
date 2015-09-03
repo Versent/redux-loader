@@ -61,7 +61,7 @@ const Loader = reduxLoader.create({
 
     This function must return an object with keys {id, find, load}
     */
-    user: function(options) {
+    user(options) {
 
       const userId = options.props.userId
       const id = `/users/${userId}`
@@ -71,14 +71,14 @@ const Loader = reduxLoader.create({
         Loader must return an id for the current resource.
         This id will be used to keep track of request already done.
         */
-        id: id,
+        id,
 
         /*
         Ask to load the resource/s
         This is triggered when a request has not been done before.
         This is determined by `id` above.
         */
-        load: function() {
+        load() {
           const action = actions.fetchOne(userId)
           return options.dispatch(action)
         },
@@ -89,7 +89,7 @@ const Loader = reduxLoader.create({
         This is called when a request has been done successfully.
         Loader uses the given `id` above to determine this.
         */
-        find: function() {
+        find() {
           return _.find(options.props.users, {id: userId})
         },
 
@@ -98,7 +98,7 @@ const Loader = reduxLoader.create({
       /*
       You may also load several resources at once
       */
-      posts: function(options) {
+      posts(options) {
         ...
       }
 
