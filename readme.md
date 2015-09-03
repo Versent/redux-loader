@@ -4,7 +4,7 @@ A high order component for Redux. This components loads resources and passes the
 
 ## Usage
 
-You Redux application must include the Redux Loader reducer for `requests`:
+Your Redux application must include the Redux Loader reducer for `requests`:
 
 ```js
 import reduxLoader from 'redux-loader'
@@ -45,7 +45,7 @@ const Loader = reduxLoader.create({
   resources: {
 
     /*
-    This resource will be send to the child component via props.
+    These resources will be send to the child component via props.
 
     You must return a function for each resource you want to load.
 
