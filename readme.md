@@ -1,10 +1,13 @@
 # Redux Loader
 
-A high order component for Redux. This components loads resources and passes them to the child components via props.
+A high order component and request management utility for Redux. 
+
+- Loads resources and passes them to the child components via props.
+- Keeps tracks of requests already done and avoids duplicate requests.
 
 ## Usage
 
-Your Redux application must include the Redux Loader reducer for `requests`:
+Your Redux application must include the Redux-Loader reducer. It needs to be under the `requests` key:
 
 ```js
 import reduxLoader from 'redux-loader'
@@ -17,7 +20,7 @@ const allReducers = combineReducers({
 const store = finalCreateStore(allReducers)
 ```
 
-This reducer is used for keeping track of pending and done requests.
+This reducer is used for keeping track of pending and completed requests.
 
 Then create a high order component to load the data:
 
