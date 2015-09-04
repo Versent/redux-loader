@@ -1,0 +1,13 @@
+{
+  "disallowMixedSpacesAndTabs": "smart",
+  "disallowSemicolons": true,
+  "disallowTrailingComma": false,
+  "esprima": "esprima-fb",
+  "fileExtensions": [".js", ".jsx"],
+  "preset": "airbnb",
+  "requireCamelCaseOrUpperCaseIdentifiers": "ignoreProperties",
+  "requirePaddingNewLinesAfterBlocks": null,
+  "requirePaddingNewLinesBeforeLineComments": null,
+  "requireSemicolons": false,
+  "requireTrailingComma": {"ignoreSingleLine": true}
+}
