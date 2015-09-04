@@ -1,5 +1,7 @@
 # Redux Loader
 
+[ ![Codeship Status for Versent/redux-loader](https://codeship.com/projects/1c793400-34d7-0133-140c-0afba22710e8/status?branch=master)](https://codeship.com/projects/100617)
+
 A high order component and request management utility for Redux. 
 
 - Loads resources and passes them to the child components via props.
