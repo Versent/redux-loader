@@ -25,7 +25,8 @@
     "lodash": "3.x",
     "react": "^0.13.3",
     "react-redux": "^2.0",
-    "redux": "^2.0"
+    "redux": "^2.0",
+    "seamless-immutable": "3.x"
   },
   "devDependencies": {
     "ava": "^0.1.0"
