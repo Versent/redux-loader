@@ -29,7 +29,9 @@
     "seamless-immutable": "3.x"
   },
   "devDependencies": {
-    "ava": "^0.1.0",
-    "bluebird": "^2.9.34"
+    "ava": "^0.2.0",
+    "bluebird": "^2.9.34",
+    "rewire": "^2.3.4",
+    "sinon": "^1.17.1"
   }
 }
