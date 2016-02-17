@@ -1,6 +1,6 @@
 {
   "name": "redux-loader",
-  "version": "0.4.2",
+  "version": "0.5.0",
   "description": "Loader component for Redux",
   "main": "index.js",
   "scripts": {
